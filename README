@@ -6,7 +6,9 @@ that works, as opposed to something optimal.
 
 Compile
 =======
-GOPATH=`pwd` go install tpack
+from the root directory:
+
+  GOPATH=`pwd` go install tpack
 
 Usage
 =====
@@ -21,10 +23,10 @@ case, there are several params:
 -c : output config file.
 
 Sample:
-bin/tpack \
-    -d <path to the directory containing sprites> \
-    -t src/tpack/out.css.tpl \
-    -p 1 \
-    -s 256 \
-    -o <output image>.png \
-    -c <output config file>
+  bin/tpack \
+      -d <path to the directory containing sprites> \
+      -t src/tpack/out.css.tpl \
+      -p 1 \
+      -s 256 \
+      -o <output image>.png \
+      -c <output config file>
