@@ -12,13 +12,13 @@ Usage
 =====
 running `bin/tpack -h` should give some documentation, but just in
 case, there are several params:
--d : the directory containing individual images
+-d : the directory containing individual images.
 -p : Padding to add between images in pixels. Default to 0px.
 -s : Size of the output image - will be square of size s.
 -t : template file to use when outputing the configuration.
-     A sample one for css is in src/tpack/out.css.tpl
+     A sample one for css is in src/tpack/out.css.tpl.
 -o : output image. must be a .png.
--c : output config file
+-c : output config file.
 
 Sample:
 bin/tpack \
