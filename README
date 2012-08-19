@@ -30,3 +30,11 @@ Sample:
       -s 256 \
       -o <output image>.png \
       -c <output config file>
+
+Licence
+=======
+This program is free software. It comes without any warranty, to
+the extent permitted by applicable law. You can redistribute it
+and/or modify it under the terms of the Be Awesome Public Licence,
+Version 1, as published by Yohann Coppel. See
+http://b.leppoc.net/pages/bapl/COPYING for more details.
