@@ -15,10 +15,11 @@ import (
 )
 
 var dir = flag.String("d", ".", "Directory to look for images")
+var padding = flag.Int("p", 0, "Padding in pixels")
+var size = flag.Int("s", 512, "Output texture size")
 var out = flag.String("o", "output.png", "Output png")
 var tpl = flag.String("t", "tpack.tpl", "Output template")
 var cfg = flag.String("c", "output.cfg", "Output config")
-var padding = flag.Int("p", 0, "Padding in pixels")
 
 type Rect struct {
   W, H int
@@ -65,7 +66,7 @@ func (r Rects) ColorModel() color.Model {
   return color.RGBAModel
 }
 func (r Rects) Bounds() image.Rectangle {
-  return image.Rect(0, 0, 512, 512)
+  return image.Rect(0, 0, *size, *size)
 }
 func (r Rects) At(x, y int) color.Color {
   for _, rect := range r {
@@ -140,8 +141,8 @@ func ReadImage(path string, filename string) *Rect {
     return nil
   }
   r := &Rect{
-      W: img.Bounds().Max.X + 1,
-      H: img.Bounds().Max.Y + 1,
+      W: img.Bounds().Max.X + *padding,
+      H: img.Bounds().Max.Y + *padding,
       Name: filename,
       NameId: makeIdName(filename),
       Img: img,
@@ -206,7 +207,7 @@ func main() {
   flag.Parse()
   rects := LoadImages(*dir)
   sort.Sort(rects)
-  Pack(rects, &Rect{W: 256, H: 256}, []*Point{&Point{0, 0}})
+  Pack(rects, &Rect{W: *size, H: *size}, []*Point{&Point{0, 0}})
   WriteFinalSprite(*out, rects)
   WriteSpriteConfig(*cfg, rects, *tpl)
 }
