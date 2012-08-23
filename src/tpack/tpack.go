@@ -20,6 +20,7 @@ var size = flag.Int("s", 512, "Output texture size")
 var out = flag.String("o", "output.png", "Output png")
 var tpl = flag.String("t", "tpack.tpl", "Output template")
 var cfg = flag.String("c", "output.cfg", "Output config")
+var verbose = flag.Bool("v", false, "Verbose")
 
 type Rect struct {
   W, H int
@@ -147,7 +148,9 @@ func ReadImage(path string, filename string) *Rect {
       NameId: makeIdName(filename),
       Img: img,
   }
-  fmt.Printf("Image %s: %dx%d\n", filename, r.W, r.H)
+  if *verbose {
+    fmt.Printf("Image %s: %dx%d\n", filename, r.W, r.H)
+  }
   return r
 }
 
@@ -185,7 +188,7 @@ func WriteFinalSprite(out string, rects Rects) {
   png.Encode(f, rects)
 }
 
-func WriteSpriteConfig(out string, rects Rects, tpl string) {
+func WriteSpriteConfig(out string, rects Rects, into *Rect, tpl string) {
   str, err := ioutil.ReadFile(tpl)
   t := template.Must(template.New("tpl").Parse(string(str)))
 
@@ -198,6 +201,7 @@ func WriteSpriteConfig(out string, rects Rects, tpl string) {
   f.Truncate(0)
 
   m := map[string]interface{}{
+     "img": into,
      "rects": rects,
   }
   t.Execute(f, m)
@@ -207,7 +211,8 @@ func main() {
   flag.Parse()
   rects := LoadImages(*dir)
   sort.Sort(rects)
-  Pack(rects, &Rect{W: *size, H: *size}, []*Point{&Point{0, 0}})
+  into := &Rect{W: *size, H: *size}
+  Pack(rects, into, []*Point{&Point{0, 0}})
   WriteFinalSprite(*out, rects)
-  WriteSpriteConfig(*cfg, rects, *tpl)
+  WriteSpriteConfig(*cfg, rects, into, *tpl)
 }
