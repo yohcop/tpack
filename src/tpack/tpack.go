@@ -24,33 +24,29 @@ var verbose = flag.Bool("v", false, "Verbose")
 
 type Rect struct {
   W, H int
+  pW, pH int  // Padded width and height
   X, Y int
+  pB, pR int  // Padded bottom and right
+  Img image.Image
+
+  // The rest of parameters are mostly useful in templates
+  // when generating some output configuration.
   Name string
   // The above name, but transformed into a usually valid ID,
   // mostly - and . are replaced by _.
   NameId string
-  Img image.Image
+  R, B int  // right and bottom: (X + W), (Y + H)
 }
 
 func (r *Rect) FitsIn(that *Rect) bool {
-  return r.W < that.W && r.H < that.H
+  return r.pW < that.pW && r.pH < that.pH
 }
 
 func (r *Rect) Overlaps(that *Rect) bool {
-  r1Left := r.X
-  r1Right := r.X + r.W
-  r1Top := r.Y
-  r1Bottom := r.Y + r.H
-
-  r2Left := that.X
-  r2Right := that.X + that.W
-  r2Top := that.Y
-  r2Bottom := that.Y + that.H
-
-  return r1Left < r2Right &&
-         r1Right > r2Left &&
-         r1Top < r2Bottom &&
-         r1Bottom > r2Top
+  return r.X < that.pR &&
+         r.pR > that.X &&
+         r.Y < that.pB &&
+         r.pB > that.Y
 }
 
 type Rects []*Rect
@@ -61,7 +57,7 @@ func (r Rects) Swap(i, j int) {
   r[i], r[j] = r[j], r[i]
 }
 func (r Rects) Less(i, j int) bool {
-  return r[i].W * r[i].H > r[j].W * r[j].H
+  return r[i].pW * r[i].pH > r[j].pW * r[j].pH
 }
 func (r Rects) ColorModel() color.Model {
   return color.RGBAModel
@@ -71,8 +67,8 @@ func (r Rects) Bounds() image.Rectangle {
 }
 func (r Rects) At(x, y int) color.Color {
   for _, rect := range r {
-    if rect.X <= x && rect.X + rect.W > x &&
-        rect.Y <= y && rect.Y + rect.H > y {
+    if rect.X <= x && rect.X + rect.pW > x &&
+        rect.Y <= y && rect.Y + rect.pH > y {
       return rect.Img.At(x - rect.X, y - rect.Y)
     }
   }
@@ -84,11 +80,15 @@ type Point struct {
 }
 
 func Fits(r *Rect, into *Rect, at *Point, placed Rects) bool {
-  if into.W < at.x + r.W || into.H < at.y + r.H {
+  if into.W < at.x + r.pW || into.H < at.y + r.pH {
     return false
   }
   r.X = at.x
   r.Y = at.y
+  r.R = r.X + r.W
+  r.B = r.Y + r.H
+  r.pR = r.R + *padding
+  r.pB = r.B + *padding
   for _, p := range placed {
     if r.Overlaps(p) {
       return false
@@ -106,8 +106,8 @@ func Pack(rects Rects, into *Rect, pts []*Point) {
     for n, p := range pts {
       if Fits(r, into, p, rects[0:i]) {
         pts = append(pts[0:n], pts[n+1:]...)
-        pts = append(pts, &Point{p.x + r.W, p.y})
-        pts = append(pts, &Point{p.x, p.y + r.H})
+        pts = append(pts, &Point{p.x + r.pW, p.y})
+        pts = append(pts, &Point{p.x, p.y + r.pH})
         placed = true
         break;
       }
@@ -142,8 +142,10 @@ func ReadImage(path string, filename string) *Rect {
     return nil
   }
   r := &Rect{
-      W: img.Bounds().Max.X + *padding,
-      H: img.Bounds().Max.Y + *padding,
+      W: img.Bounds().Max.X,
+      H: img.Bounds().Max.Y,
+      pW: img.Bounds().Max.X + *padding,
+      pH: img.Bounds().Max.Y + *padding,
       Name: filename,
       NameId: makeIdName(filename),
       Img: img,
@@ -200,9 +202,16 @@ func WriteSpriteConfig(out string, rects Rects, into *Rect, tpl string) {
   }
   f.Truncate(0)
 
+  sprites := map[string]*Rect{}
+  for _, r := range rects {
+    fmt.Printf("Mapping %s\n", r.NameId)
+    sprites[r.NameId] = r
+  }
+
   m := map[string]interface{}{
      "img": into,
      "rects": rects,
+     "sprites": sprites,
   }
   t.Execute(f, m)
 }
